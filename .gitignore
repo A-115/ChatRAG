@@ -1,0 +1,22 @@
+# Entornos virtuales (Muy importante para no subir gigas de librerías)
+.venv/
+venv/
+env/
+
+# Archivos temporales de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Configuración de editores (VS Code / PyCharm)
+.vscode/
+.idea/
+
+# Bases de datos y archivos de datos pesados
+*.db
+*.sqlite3
+storage/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
