@@ -1,2 +1,4 @@
 PySide6
 bcryp
+pysqlite3
+pymupdf

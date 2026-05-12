@@ -2,14 +2,17 @@ import sys
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                             QHBoxLayout, QTextEdit, QLineEdit, QPushButton, 
                             QFileDialog, QLabel, QListWidget)
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QThread, Signal
 from database.database_manager import insertar_mensaje_db, inicializar_datos_prueba  # Eliminar inicializar_datos_prueba en producción, es solo para pruebas iniciales
+from src.logic.ia_engine import procesar_pregunta_ia
+from src.logic.document_processor import extraer_texto_pdf, dividir_texto_en_chunks, limpiar_texto, encontrar_mejores_chunks
 
 class ChatWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("AI RAG Assistant - Prototipo")
         self.resize(800, 600)
+        self.chunk_documento = []  # Variable para almacenar los chunks del texto extraído del documento
         inicializar_datos_prueba()  # Llenar la base de datos con datos de prueba (eliminar en producción)
 
         # Widget Principal
@@ -47,16 +50,16 @@ class ChatWindow(QMainWindow):
         # Unir todo
         self.layout_principal.addLayout(self.panel_lateral, 1)
         self.layout_principal.addLayout(self.layout_chat, 3)
-
-        # Conexiones (Slots)
         self.btn_cargar.clicked.connect(self.seleccionar_archivo)
         self.btn_enviar.clicked.connect(self.enviar_mensaje)
+
 
     def seleccionar_archivo(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Seleccionar Archivo", "", "Archivos (*.pdf *.txt)")
         if file_path:
             nombre = file_path.split("/")[-1]
             self.lbl_archivo.setText(f"Archivo: {nombre}")
+
 
     def enviar_mensaje(self):
         texto = self.campo_texto.text()
@@ -67,7 +70,57 @@ class ChatWindow(QMainWindow):
             insertar_mensaje_db(1, "Usuario", texto)
             # Aquí conectarás con el OrquestadorRAG después
             self.area_visualizacion.append("<b>Sistema:</b> <i>Procesando...</i>")
+            self.campo_texto.setEnabled(False)  # Deshabilitar el campo de texto mientras la IA procesa la pregunta
 
+            self.worker = IAThread(texto, self.chunk_documento) 
+            self.worker.respuesta_recibida.connect(self.mostrar_respuesta_ia)
+            self.worker.start()
+
+
+    def mostrar_respuesta_ia(self, respuesta):
+        self.area_visualizacion.append(f"<b>Sistema:</b> {respuesta}")
+        self.campo_texto.setEnabled(True)  # Volver a habilitar el campo de texto después de recibir la respuesta
+        self.campo_texto.setFocus()  # Enfocar el campo de texto para que el usuario pueda escribir la siguiente pregunta
+
+
+    def seleccionar_archivo(self):
+        #Funcion para abrir el buscador de archivos y extraer el texto del PDF seleccionado
+        #Abri el buscador de archivos
+        file_path, _ = QFileDialog.getOpenFileName(self, "Seleccionar Archivo", "", "Archivos (*.pdf *.txt)")
+        if file_path:
+            nombre = file_path.split("/")[-1]
+            self.lbl_archivo.setText(f"Archivo: {nombre}")
+            contenido_extraido = extraer_texto_pdf(file_path)
+
+            if contenido_extraido:
+                self.chunk_documento = dividir_texto_en_chunks(contenido_extraido)  # Dividir el texto en chunks para su procesamiento
+                self.area_visualizacion.append(f"<b>Sistema:</b> Documento '{nombre}' cargado exitosamente.")
+            else:
+                self.area_visualizacion.append(f"<b>Sistema:</b> Error al cargar el documento '{nombre}'.")
+
+
+
+#Ejecutar el procesamiento de la IA en un hilo separado para evitar bloquear la interfaz
+#Si se ejecuta directamente en el hilo principal, la interfaz se congelará durante el tiempo que la IA esté "pensando"
+#Al usar QThread, la interfaz seguirá siendo responsiva y se actualizará con la respuesta de la IA una vez que esté lista
+class IAThread(QThread):
+    respuesta_recibida = Signal(str)
+
+    def __init__(self, pregunta, chunks=[]):
+        super().__init__()
+        self.pregunta = pregunta
+        self.chunks = chunks
+
+    def run(self):
+        mejor_contexto = encontrar_mejores_chunks(self.pregunta, self.chunks)  
+        respuesta = procesar_pregunta_ia(self.pregunta, mejor_contexto)
+        insertar_mensaje_db(1, "Sistema", respuesta)  # Guardar la respuesta de la IA en la base de datos
+        self.respuesta_recibida.emit(respuesta)
+
+
+
+
+    
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ChatWindow()
