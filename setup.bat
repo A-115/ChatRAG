@@ -33,6 +33,9 @@ call venv\Scripts\activate.bat
 REM Instalar dependencias
 echo 📥 Instalando dependencias...
 python -m pip install --upgrade pip
+
+REM Limpiar versiones conflictivas por si el entorno virtual ya existía
+pip uninstall google google-generativeai google-genai -y
 pip install -r requirements.txt
 
 REM Crear .env desde .env.example si no existe
