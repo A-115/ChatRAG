@@ -119,18 +119,19 @@ def validar_login(correo, password_plana):
     try:
         cursor = conexion.cursor()
         #Busca el usuario por correo
-        sql = "SELECT password_hash FROM usuarios WHERE correo = %s"
+        sql = "SELECT id, password_hash FROM usuarios WHERE correo = %s"
         cursor.execute(sql, (correo,))
         resultado = cursor.fetchone() #Trae la primera fila del resultado, que debería ser el hash de la contraseña
 
         if not resultado:
             return False, "Correo no encontrado."
         
-        hash_guardado =  resultado[0]
+        id_usuario = resultado[0] 
+        hash_guardado = resultado[1]
 
         #Compara la contraseña plana con el hash utilizando el auth_manager
         if auth_manager.verificar_login(password_plana, hash_guardado):
-            return True, "Login exitoso."
+            return True, "Login exitoso.", id_usuario      #Devuelve el id del usuario para poder usarlo en la creación de conversaciones y mensajes relacionados a ese usuario
         else:
             return False, "Contraseña incorrecta."
     except Exception as e:
@@ -182,6 +183,48 @@ def crear_conversacion_db(id_usuario, nombre_archivo):
         if conexion:
             conexion.rollback()
         return None
+    finally:
+        if cursor: cursor.close()
+        if conexion: conexion.close()
+
+
+def obtener_conversacion_por_archivo(id_usuario, nombre_archivo):
+    #Busca si existe una conversacion para un usario con un archivo en especifico
+    #devuelve el id de la conversacion si existe, o None si no existe
+    conexion = obtener_conexion()
+    if not conexion:
+        return None
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        sql = "SELECT id_conversacion FROM conversaciones WHERE id_usuario = %s AND nombre_archivo = %s LIMIT 1"
+
+        cursor.execute(sql, (id_usuario, nombre_archivo))
+        resultado = cursor.fetchone()
+        return resultado[0] if resultado else None
+    except Exception as e:
+        print(f"Error al obtener la conversación por archivo: {e}")
+        return None
+    finally:
+        if cursor: cursor.close()
+        if conexion: conexion.close()
+
+
+def obtener_mensajes_db(id_conversacion):
+    #Recupera los mensajes de una conversación específica, ordenados por fecha
+    conexion = obtener_conexion()
+    if not conexion:
+        return []
+    
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        sql = "SELECT remitente, mensaje, fecha FROM mensajes WHERE id_conversacion = %s ORDER BY fecha ASC" # Se ordena por id para mantener el orden cronológico de los mensajes
+        cursor.execute(sql, (id_conversacion,))
+        return cursor.fetchall()  # Devuelve una lista de tuplas con los mensajes (remitente, mensaje, fecha)
+    except Exception as e:
+        print(f"Error al obtener los mensajes de la conversación: {e}")
+        return []
     finally:
         if cursor: cursor.close()
         if conexion: conexion.close()

@@ -6,7 +6,7 @@ from database.database_manager import validar_login
 
 class LoginWindow(QWidget):
 
-    login_exitoso = Signal()  # Señal personalizada para indicar que el login fue exitoso
+    login_exitoso = Signal(int)  # Señal personalizada para indicar que el login fue exitoso
 
     def __init__(self):
         super().__init__()
@@ -63,10 +63,10 @@ class LoginWindow(QWidget):
             return
         
         # Llamar a la función de validación de login del database_manager
-        exito, mensaje = validar_login(correo, password)
+        exito, mensaje, id_usuario = validar_login(correo, password)
         if exito:
             QMessageBox.information(self, "Éxito", "¡Login exitoso!")
-            self.login_exitoso.emit()  # Emitir la señal de login exitoso
+            self.login_exitoso.emit(id_usuario)  # Emitir la señal de login exitoso con el ID del usuario
             self.input_correo.clear()  # Limpiar el campo de correo
             self.input_password.clear()  # Limpiar el campo de contraseña
 

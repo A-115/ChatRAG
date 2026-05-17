@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout,
                             QHBoxLayout, QLineEdit, QPushButton, 
                             QFileDialog, QLabel, QTextEdit, QApplication)
 from PySide6.QtCore import Qt, QThread, Signal
-from database.database_manager import crear_conversacion_db, insertar_mensaje_db
+from database.database_manager import crear_conversacion_db, insertar_mensaje_db, obtener_conversacion_por_archivo, obtener_mensajes_db
 from src.logic.ia_engine import procesar_pregunta_ia
 from src.logic.document_processor import extraer_texto_pdf, dividir_texto_en_chunks, encontrar_mejores_chunks
 
@@ -88,15 +88,54 @@ class ChatWindow(QWidget):
 
             if contenido_extraido:
                 self.chunk_documento = dividir_texto_en_chunks(contenido_extraido)  # Dividir el texto en chunks para su procesamiento
-                self.area_visualizacion.append(f"<b>Sistema:</b> Documento '{nombre}' cargado exitosamente.")
-                id_conv = crear_conversacion_db(self.id_usuario_actual, nombre)  # Crear una nueva conversación en la base de datos para este documento
-                if id_conv:
-                    self.id_conversacion_actual = id_conv
+                id_conv_existente = obtener_conversacion_por_archivo(self.id_usuario_actual, nombre)  # Verificar si ya existe una conversación para este archivo y usuario
+                if id_conv_existente:
+                    self.id_conversacion_actual = id_conv_existente
+                    self.area_visualizacion.append(f"<b>Sistema:</b> Continuando conversación con el documento '{nombre}'.")
+                    self.cargar_historial_visual(self.id_conversacion_actual)  # Cargar el historial de la conversación en la interfaz
                 else:
-                    self.area_visualizacion.append(f"<b>Sistema:</b> Error al crear la conversación en la base de datos para el documento '{nombre}'.")                  
+                    id_conv_nuevo = crear_conversacion_db(self.id_usuario_actual, nombre)  # Crear una nueva conversación en la base de datos para este documento
+                    if id_conv_nuevo:
+                        self.id_conversacion_actual = id_conv_nuevo
+                        self.area_visualizacion.clear()  # Limpiar el área de visualización para la nueva conversación
+                        self.area_visualizacion.append(f"<b>Sistema:</b> Nueva conversación iniciada con el documento '{nombre}'")
+                    else:
+                        self.area_visualizacion.append(f"<b>Sistema:</b> Error al crear la conversación en la base de datos para el documento '{nombre}'.")                  
             else:
                 self.area_visualizacion.append(f"<b>Sistema:</b> Error al cargar el documento '{nombre}'.")
 
+
+    def cargar_historial_visual(self, id_conversacion):
+        #Descarga los mensajes de la conversación desde la base de datos y los muestra en el área de visualización
+        self.area_visualizacion.clear()
+        self.area_visualizacion.append(f"<b>Sistema:</b> <i>Cargando historial de la conversación...</i>")
+
+        #Se trae el historial de mensajes desde la base de datos utilizando la función obtener_mensajes_db
+        historial = obtener_mensajes_db(id_conversacion)
+
+        self.area_visualizacion.clear()  # Limpiar el mensaje de "Cargando historial" después de obtener los mensajes
+        if historial:
+            for fila in historial:
+                fila_lista = list(fila)  # Convertir la tupla a lista para facilitar el acceso a los elementos
+                if "Usuario" in fila_lista:
+                    remitente = "Usuario"
+                    texto = fila_lista[fila_lista.index("Usuario") + 1]
+                elif "Sistema" in fila_lista:
+                    remitente = "Sistema"
+                    texto = fila_lista[fila_lista.index("Sistema") + 1]
+                else:
+                    # Si no se encuentra el remitente, se asigna un valor por defecto
+                    remitente = fila[0] 
+                    texto = fila[1]
+                
+                if remitente == "Usuario":
+                    self.area_visualizacion.append(f"<b>Usuario:</b> {texto}")
+                else:
+                    self.area_visualizacion.append(f"<b>Sistema:</b> {texto}")
+                
+            self.area_visualizacion.append(f"<b>Sistema:</b> Historial cargado. Puedes continuar la conversación.")
+        else:
+            self.area_visualizacion.append(f"<b>Sistema:</b> No se encontraron mensajes en el historial de esta conversación.")
 
 
 #Ejecutar el procesamiento de la IA en un hilo separado para evitar bloquear la interfaz

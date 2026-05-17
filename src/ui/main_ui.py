@@ -31,8 +31,10 @@ class MainWindow(QMainWindow):
         self.stack.setCurrentWidget(self.vista_register)
     def mostrar_login(self):
         self.stack.setCurrentWidget(self.vista_login)
-    def mostrar_chat(self):
+    def mostrar_chat(self, id_usuario):
+        self.vista_chat.id_usuario_actual = id_usuario
         self.stack.setCurrentWidget(self.vista_chat)
+        print(f"Sesión iniciada para el usuario con ID: {id_usuario}")  # Imprime el ID del usuario que ha iniciado sesión
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
