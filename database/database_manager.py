@@ -41,6 +41,28 @@ def inicializar_base_de_datos():
             );
         """)
 
+        #Tabla para las conversaciones (Depende de usuarios)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS conversaciones (
+                id_conversacion SERIAL PRIMARY KEY,
+                id_usuario INTEGER NOT NULL,
+                nombre_archivo TEXT NOT NULL,
+                FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
+            );
+        """)
+
+        #Tabla para el historial del chat (Depende de conversaciones)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS mensajes (
+                id SERIAL PRIMARY KEY,
+                id_conversacion INTEGER NOT NULL,
+                remitente VARCHAR(50) NOT NULL,
+                mensaje TEXT,
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (id_conversacion) REFERENCES conversaciones(id_conversacion)
+            );
+        """)
+
         conexion.commit()
         print("Base de datos inicializada correctamente.")
     except Exception as e:
@@ -51,6 +73,11 @@ def inicializar_base_de_datos():
 
 
 def registrar_usuario(correo, password_plana):
+    #Valida el registro de un nuevo usuario, verifica que el correo no exista y que la contraseña cumpla con los requisitos, luego hashea la contraseña y la guarda en la base de datos
+    es_valida, mensaje_validacion = auth_manager.validar_password(password_plana)
+    if not es_valida:
+        return False, mensaje_validacion
+    
     # Recibe un correo y una contraseña plana, hashea la contraseña y la guarda en la base de datos
     conexion = obtener_conexion()
     if not conexion:
@@ -113,22 +140,24 @@ def validar_login(correo, password_plana):
         if conexion: conexion.close()
 
 
-#Prueba de la base de datos
-if __name__ == "__main__":
-    print("Inicializando la base de datos...")
-    inicializar_base_de_datos()
-
-    print("\n Prueba de registro")
-    # intento de registro de un nuevo usuario
-    exito_reg, msg_reg = registrar_usuario("test@correo.com", "contraseña123*")
-    print(f"Resultado: {msg_reg}  ")
-
-    # intento de registro con el mismo correo para probar la restricción de unicidad
-    print("\n Prueba de login")
-    exito_log, msg_log = validar_login("test@correo.com", "contraseña123*")
-    print(f"Intento correcto: {msg_log}  ")
-
-    # intento de login con contraseña incorrecta
-    print("\n Prueba de login con contraseña incorrecta")
-    exito_falso, msg_falso = validar_login("test@correo.com", "contraseñaincorrecta")
-    print(f"Intento incorrecto: {msg_falso}  ")
+#Funcion para conectar con la interfaz de chat y guardar los mensajes en la base de datos
+def insertar_mensaje_db(id_conversacion, remitente, texto_mensaje):
+    #Inserta un mensaje en la base de datos
+    conexion = obtener_conexion()
+    if not conexion:
+        print("Error de conexión a la base de datos.")
+        return
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        sql = "INSERT INTO mensajes (id_conversacion, remitente, mensaje) VALUES (%s, %s, %s)"
+        cursor.execute(sql, (id_conversacion, remitente, texto_mensaje))
+        conexion.commit()
+    except Exception as e:
+        print(f"Error al insertar el mensaje en la base de datos: {e}")
+        if conexion:
+            conexion.rollback()
+        return False
+    finally:
+        if cursor: cursor.close()
+        if conexion: conexion.close()
