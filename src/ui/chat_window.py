@@ -3,9 +3,10 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout,
                             QHBoxLayout, QLineEdit, QPushButton, 
                             QFileDialog, QLabel, QTextEdit, QApplication)
 from PySide6.QtCore import Qt, QThread, Signal
-from database.database_manager import crear_conversacion_db, insertar_mensaje_db, obtener_conversacion_por_archivo, obtener_mensajes_db
+from database.database_manager import crear_conversacion_db, insertar_mensaje_db, obtener_conversacion_por_archivo, obtener_mensajes_db, obtener_datos_completos_conversacion
 from src.logic.ia_engine import procesar_pregunta_ia
 from src.logic.document_processor import extraer_texto_pdf, dividir_texto_en_chunks, encontrar_mejores_chunks
+from src.logic.export_manager import exportar_a_json, exportar_a_xml
 
 class ChatWindow(QWidget):
     def __init__(self):
@@ -49,6 +50,7 @@ class ChatWindow(QWidget):
         self.layout_principal.addLayout(self.layout_chat, 3)
         self.btn_cargar.clicked.connect(self.seleccionar_archivo)
         self.btn_enviar.clicked.connect(self.enviar_mensaje)
+        self.btn_exportar.clicked.connect(self.ejecutar_exportacion)
 
 
     def enviar_mensaje(self):
@@ -136,6 +138,26 @@ class ChatWindow(QWidget):
             self.area_visualizacion.append(f"<b>Sistema:</b> Historial cargado. Puedes continuar la conversación.")
         else:
             self.area_visualizacion.append(f"<b>Sistema:</b> No se encontraron mensajes en el historial de esta conversación.")
+    
+
+    def ejecutar_exportacion(self):
+        #Funcion para exportar la conversacion actual a un archivo JSON o XML
+        if not self.id_conversacion_actual: return  # Si no hay conversación activa, no se permite exportar
+
+        ruta, filtro = QFileDialog.getSaveFileName(self, "Exportar Conversación", f"Chat_{self.id_conversacion_actual}",
+                                                    "Archivos JSON (*.json);;Archivos XML (*.xml)")
+        if ruta:
+            datos = obtener_datos_completos_conversacion(self.id_conversacion_actual)  # Obtener los datos completos de la conversación desde la base de datos
+
+            if ruta.endswith(".json") or "JSON" in filtro:
+                exportar_a_json(datos, ruta)
+                self.area_visualizacion.append(f"<b>Sistema:</b> Conversación exportada exitosamente a JSON.")
+            elif ruta.endswith(".xml") or "XML" in filtro:
+                exportar_a_xml(datos, ruta)
+                self.area_visualizacion.append(f"<b>Sistema:</b> Conversación exportada exitosamente a XML.")
+            else:
+                self.area_visualizacion.append(f"<b>Sistema:</b> Formato de archivo no soportado para la exportación.")
+
 
 
 #Ejecutar el procesamiento de la IA en un hilo separado para evitar bloquear la interfaz

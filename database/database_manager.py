@@ -228,3 +228,36 @@ def obtener_mensajes_db(id_conversacion):
     finally:
         if cursor: cursor.close()
         if conexion: conexion.close()
+
+
+def obtener_datos_completos_conversacion(id_conversacion):
+    #Recupera toda la información de una conversación, incluyendo la metadata del usuario, el nombre del archivo y el historial completo de mensajes
+    conexion = obtener_conexion()
+    if not conexion:
+        return None
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("SELECT nombre_archivo FROM conversaciones WHERE id_conversacion = %s", (id_conversacion,))
+        res = cursor.fetchone()
+        if not res:
+            return None
+        nombre_archivo = res[0]
+        
+        cursor.execute("SELECT remitente, mensaje, fecha FROM mensajes WHERE id_conversacion = %s ORDER BY id ASC", (id_conversacion,))
+        filas = cursor.fetchall()
+
+        mensajes_lista = []
+        for fila in filas:
+            fecha_str = str(fila[2]) if fila[2] else "Sin fecha"
+            mensajes_lista.append({"remitente": fila[0], "contenido": fila[1], "fecha": fecha_str})
+        return {"id_conversacion": id_conversacion, 
+                "nombre_archivo": nombre_archivo, 
+                "mensajes": mensajes_lista}
+    
+    except Exception as e:
+        print(f"Error al obtener los datos completos de la conversación: {e}")
+        return None
+    finally:
+        if cursor: cursor.close()
+        if conexion: conexion.close()

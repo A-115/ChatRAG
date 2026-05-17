@@ -1,6 +1,6 @@
 import sys
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout,
-                              QLabel, QLineEdit, QPushButton, QMessageBox)
+                                QLabel, QLineEdit, QPushButton, QMessageBox)
 from PySide6.QtCore import Qt
 from database.database_manager import registrar_usuario
 
