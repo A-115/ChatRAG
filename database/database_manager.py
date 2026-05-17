@@ -161,3 +161,27 @@ def insertar_mensaje_db(id_conversacion, remitente, texto_mensaje):
     finally:
         if cursor: cursor.close()
         if conexion: conexion.close()
+
+
+def crear_conversacion_db(id_usuario, nombre_archivo):
+    #Crea una nueva conversación en la base de datos y devuelve el id de la conversación creada
+    conexion = obtener_conexion()
+    if not conexion:
+        print("Error de conexión a la base de datos.")
+        return None
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        sql = "INSERT INTO conversaciones (id_usuario, nombre_archivo) VALUES (%s, %s) RETURNING id_conversacion"
+        cursor.execute(sql, (id_usuario, nombre_archivo))
+        id_conversacion = cursor.fetchone()[0]  # Obtener el ID de la conversación recién creada
+        conexion.commit()
+        return id_conversacion
+    except Exception as e:
+        print(f"Error al crear la conversación en la base de datos: {e}")
+        if conexion:
+            conexion.rollback()
+        return None
+    finally:
+        if cursor: cursor.close()
+        if conexion: conexion.close()

@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout,
                             QHBoxLayout, QLineEdit, QPushButton, 
                             QFileDialog, QLabel, QTextEdit, QApplication)
 from PySide6.QtCore import Qt, QThread, Signal
-from database.database_manager import insertar_mensaje_db
+from database.database_manager import crear_conversacion_db, insertar_mensaje_db
 from src.logic.ia_engine import procesar_pregunta_ia
 from src.logic.document_processor import extraer_texto_pdf, dividir_texto_en_chunks, encontrar_mejores_chunks
 
@@ -11,6 +11,9 @@ class ChatWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.chunk_documento = []  # Variable para almacenar los chunks del texto extraído del documento
+
+        self.id_usuario_actual = 1 
+        self.id_conversacion_actual = None
 
         self.layout_principal = QHBoxLayout(self)
 
@@ -49,17 +52,22 @@ class ChatWindow(QWidget):
 
 
     def enviar_mensaje(self):
+        #Si no hay conversacion activa, no se permite enviar mensajes
+        if not self.id_conversacion_actual:
+            self.area_visualizacion.append("<b>Sistema:</b> Por favor, carga un documento para iniciar la conversación.")
+            return
+        
         texto = self.campo_texto.text()
         if texto:
             self.area_visualizacion.append(f"<b>Usuario:</b> {texto}")
             self.campo_texto.clear()
-            #por el momento sera 1 como ID de conversación fijo, luego se implementará la lógica para manejar múltiples conversaciones
-            insertar_mensaje_db(1, "Usuario", texto)
+
+            insertar_mensaje_db(self.id_conversacion_actual, "Usuario", texto)
             # Aquí conectarás con el OrquestadorRAG después
             self.area_visualizacion.append("<b>Sistema:</b> <i>Procesando...</i>")
             self.campo_texto.setEnabled(False)  # Deshabilitar el campo de texto mientras la IA procesa la pregunta
 
-            self.worker = IAThread(texto, self.chunk_documento) 
+            self.worker = IAThread(texto, self.chunk_documento, self.id_conversacion_actual)
             self.worker.respuesta_recibida.connect(self.mostrar_respuesta_ia)
             self.worker.start()
 
@@ -81,6 +89,11 @@ class ChatWindow(QWidget):
             if contenido_extraido:
                 self.chunk_documento = dividir_texto_en_chunks(contenido_extraido)  # Dividir el texto en chunks para su procesamiento
                 self.area_visualizacion.append(f"<b>Sistema:</b> Documento '{nombre}' cargado exitosamente.")
+                id_conv = crear_conversacion_db(self.id_usuario_actual, nombre)  # Crear una nueva conversación en la base de datos para este documento
+                if id_conv:
+                    self.id_conversacion_actual = id_conv
+                else:
+                    self.area_visualizacion.append(f"<b>Sistema:</b> Error al crear la conversación en la base de datos para el documento '{nombre}'.")                  
             else:
                 self.area_visualizacion.append(f"<b>Sistema:</b> Error al cargar el documento '{nombre}'.")
 
@@ -92,15 +105,16 @@ class ChatWindow(QWidget):
 class IAThread(QThread):
     respuesta_recibida = Signal(str)
 
-    def __init__(self, pregunta, chunks=None):
+    def __init__(self, pregunta, chunks=None, id_conversacion=None):
         super().__init__()
         self.pregunta = pregunta
         self.chunks = chunks if chunks is not None else []
+        self.id_conversacion_actual = id_conversacion  #Se guarda el id de la conversación para poder insertar la respuesta de la IA en la base de datos
 
     def run(self):
         mejor_contexto = encontrar_mejores_chunks(self.pregunta, self.chunks)  
         respuesta = procesar_pregunta_ia(self.pregunta, mejor_contexto)
-        insertar_mensaje_db(1, "Sistema", respuesta)  # Guardar la respuesta de la IA en la base de datos
+        insertar_mensaje_db(self.id_conversacion_actual, "Sistema", respuesta)  # Guardar la respuesta de la IA en la base de datos
         self.respuesta_recibida.emit(respuesta)
 
 

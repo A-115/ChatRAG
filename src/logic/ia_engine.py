@@ -13,10 +13,10 @@ else:
 
 def procesar_pregunta_ia(pregunta, contexto=""):
     #Toma el mejor chunk y se lo pasa a gemini
-    if not contexto:
-        return "Por favor, carga un documento para que pueda responder a tus preguntas."
     if not cliente:
         return "Error: No se encontró la API key, en el .env."
+    if not contexto:
+        return "[No se encontraron fragmentos relevantes en el documento para esta pregunta específica]."
     
     #El prompt RAG (obliga a la IA a no inventar respuestas y a usar solo el contexto proporcionado
     prompt = f"""
