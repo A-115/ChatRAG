@@ -1,0 +1,219 @@
+======================================================================
+ MANUAL DE USUARIO - ChatRAG (Asistente RAG con IA)
+======================================================================
+
+======================================================================
+ CONFIGURACION DEL ARCHIVO .env
+======================================================================
+
+Este programa necesita conectarse a dos servicios externos:
+  1. Google Gemini (para generar respuestas)
+  2. Supabase (base de datos en la nube)
+
+Para ello, debes crear y configurar un archivo llamado ".env"
+en la misma carpeta donde se extrae la aplicación (ChatRAG.exe
+en Windows, o ChatRAG en Linux).
+
+Dentro de esa carpeta ya existe un archivo de ejemplo llamado
+".env.example". Puedes renombrarlo a ".env" y luego editarlo
+con tus propios datos.
+
+======================================================================
+ PASO 1: CONSEGUIR LA API KEY DE GOOGLE GEMINI
+======================================================================
+
+1. Abre tu navegador y ve a: https://aistudio.google.com/app/apikey
+2. Inicia sesión con tu cuenta de Google.
+3. Haz clic en "Create API Key" (Crear clave de API).
+4. Copia la clave generada (comienza con "AIzaSy...").
+5. Pega esa clave en el archivo .env, en la línea:
+      GEMINI_API_KEY=AIzaSy... (tu clave)
+
+======================================================================
+ PASO 2: CREAR UN PROYECTO EN SUPABASE (BASE DE DATOS)
+======================================================================
+
+1. Ve a https://supabase.com e inicia sesión (puedes usar GitHub).
+2. Haz clic en "New project" (Nuevo proyecto).
+3. Rellena los campos:
+      - Name: ChatRAG (o el nombre que prefieras)
+      - Database Password: INVENTA una contraseña segura y ANÓTALA.
+      - Region: elige la más cercana a tu ubicación.
+4. Haz clic en "Create new project" y espera unos 2 minutos.
+
+5. Cuando el proyecto esté listo, en el menú izquierdo ve a
+   "Settings" (Configuración) -> "Database" (Base de datos).
+
+6. Busca la sección "Connection string" y selecciona la pestaña "URI".
+7. Marca la casilla "Show password" para ver la contraseña.
+8. Copia toda la línea. Tiene este formato:
+   postgresql://postgres:CONTRASEÑA@db.xxxx.supabase.co:5432/postgres
+
+9. Ahora extrae los datos para el archivo .env:
+   - SUPABASE_HOST    = db.xxxx.supabase.co
+   - SUPABASE_DB_PORT = 5432
+   - SUPABASE_DB_NAME = postgres
+   - SUPABASE_DB_USER = postgres
+   - SUPABASE_DB_PASSWORD = CONTRASEÑA (la que inventaste en el paso 3)
+
+10. Pega cada valor en la línea correspondiente del archivo .env.
+
+======================================================================
+ PASO 3: COMPLETAR EL ARCHIVO .env
+======================================================================
+
+Abre el archivo .env con un editor de texto (Bloc de notas, por ejemplo)
+y rellena todas las líneas. Debe quedar parecido a esto:
+
+   GEMINI_API_KEY=AIzaSy...tu_clave_de_gemini
+   SUPABASE_HOST=db.xxxx.supabase.co
+   SUPABASE_DB_PORT=5432
+   SUPABASE_DB_NAME=postgres
+   SUPABASE_DB_USER=postgres
+   SUPABASE_DB_PASSWORD=LaContraseñaQuePusiste
+
+Guarda el archivo y ciérralo.
+
+======================================================================
+ NOTAS IMPORTANTES
+======================================================================
+
+- El archivo .env NO tiene extensión, solo se llama ".env".
+- No compartas tu archivo .env con nadie, contiene claves privadas.
+- Si cambias de API Key o de proyecto Supabase, solo edita el .env.
+- La primera vez que ejecutes la aplicación, se crearán
+  automáticamente las tablas necesarias en tu base de datos.
+
+======================================================================
+ EJECUCIÓN DEL PROGRAMA
+======================================================================
+
+Windows:
+   - Haz doble clic sobre ChatRAG.exe. Si Windows te muestra una
+     advertencia de seguridad, haz clic en "Más información" y luego
+     en "Ejecutar de todos modos".
+
+Linux:
+   - Abre una terminal en esa carpeta y ejecuta:
+         chmod +x ChatRAG
+         ./ChatRAG
+
+======================================================================
+
+
+======================================================================
+ FUNCIONAMIENTO DE LA APLICACIÓN
+======================================================================
+
+ChatRAG es una aplicación de escritorio tipo chat que te permite
+cargar un archivo de texto o PDF, hacer preguntas sobre su contenido
+y recibir respuestas generadas por inteligencia artificial (Google
+Gemini). También guarda tus conversaciones y permite exportarlas.
+
+A continuación se explica cómo utilizar cada una de sus funciones.
+
+----------------------------------------------------------------------
+ PANTALLA DE INICIO DE SESIÓN Y REGISTRO
+----------------------------------------------------------------------
+
+Al abrir la aplicación, verás la ventana de "Iniciar sesión".
+Si ya tienes una cuenta, introduce tu correo y contraseña y pulsa
+"Entrar".
+
+Si no tienes cuenta, haz clic en "¿No tienes cuenta? Regístrate".
+Se abrirá el formulario de registro donde deberás ingresar:
+   - Un correo electrónico (no necesita ser real, pero debe tener
+     formato válido, ej: usuario@correo.com).
+   - Una contraseña que cumpla los siguientes requisitos:
+        * Al menos 10 caracteres
+        * Al menos un número (0-9)
+        * Al menos un carácter especial (por ejemplo: !@#$%^&*)
+   - Repetir la contraseña (debe coincidir exactamente).
+
+Si el registro es exitoso, serás redirigido a la pantalla de inicio
+de sesión para que entres con tu nueva cuenta.
+
+----------------------------------------------------------------------
+ VENTANA PRINCIPAL DEL CHAT
+----------------------------------------------------------------------
+
+Una vez que inicias sesión, accedes a la ventana principal del chat.
+Esta se compone de:
+
+   - Área central: muestra los mensajes de la conversación en burbujas
+     diferenciadas:
+        * "Tú" (usuario) en color oscuro.
+        * "ChatRAG" (modelo IA) en color azul claro.
+   - Parte inferior: un campo de texto para escribir tus preguntas
+     y un botón "Enviar".
+   - Panel izquierdo (barra lateral) con las siguientes opciones:
+        * "Cargar archivo"
+        * "Exportar conversación"
+        * "Cerrar sesión"
+
+----------------------------------------------------------------------
+ CÓMO CARGAR UN ARCHIVO
+----------------------------------------------------------------------
+
+1. Haz clic en "Cargar archivo" (en el panel izquierdo).
+2. Se abrirá una ventana de exploración de archivos.
+3. Selecciona un archivo con extensión .txt o .pdf.
+4. El nombre del archivo cargado aparecerá en la barra superior
+   de la ventana.
+
+A partir de ese momento, las preguntas que hagas se basarán en el
+contenido de ese archivo. Si no cargas ningún archivo, el sistema
+responderá indicando que no hay información disponible.
+
+----------------------------------------------------------------------
+ CÓMO HACER PREGUNTAS
+----------------------------------------------------------------------
+
+1. Escribe tu pregunta en el campo de texto inferior.
+2. Pulsa el botón "Enviar" o la tecla Enter.
+3. Tu mensaje aparecerá en el área de chat con la etiqueta "Tú".
+4. El sistema procesará la pregunta y, tras unos segundos, mostrará
+   la respuesta generada por la IA bajo la etiqueta "ChatRAG".
+
+La respuesta se genera utilizando el contenido del archivo que hayas
+cargado. Si cambias de archivo, la conversación se reinicia y el
+contexto se actualiza.
+
+----------------------------------------------------------------------
+ EXPORTAR UNA CONVERSACIÓN
+----------------------------------------------------------------------
+
+Puedes guardar la conversación actual en formato JSON o XML:
+
+1. Haz clic en "Exportar conversación" (en el panel izquierdo).
+2. Selecciona el formato deseado (JSON o XML) en el cuadro de diálogo.
+3. Elige la carpeta donde deseas guardar el archivo.
+4. La conversación se exportará incluyendo:
+      - Identificador de la conversación
+      - Nombre del archivo asociado
+      - Lista de mensajes con emisor, texto y fecha/hora
+
+Los formatos de exportación siguen la estructura solicitada en los
+requerimientos del proyecto.
+
+----------------------------------------------------------------------
+ CERRAR SESIÓN
+----------------------------------------------------------------------
+
+Para salir de tu cuenta, simplemente haz clic en "Cerrar sesión".
+Volverás a la pantalla de inicio de sesión.
+
+----------------------------------------------------------------------
+ NOTAS ADICIONALES
+----------------------------------------------------------------------
+
+- Las conversaciones se guardan automáticamente en la base de datos
+  (Supabase). Si cierras la aplicación y vuelves a entrar con el mismo
+  usuario, podrás recuperar el historial de conversaciones anteriores
+  siempre que cargues el mismo archivo nuevamente.
+- La aplicación está diseñada para ejecutarse en Windows y Linux.
+  En macOS no ha sido probada, pero podría funcionar.
+- Para cualquier duda o incidencia, contacta con el equipo de
+  desarrollo.
+
+======================================================================
