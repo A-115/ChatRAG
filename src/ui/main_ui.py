@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QStackedWidget)
 from src.ui.login_window import LoginWindow
 from src.ui.register_window import RegisterWindow
 from src.ui.chat_window import ChatWindow
+from database.database_manager import inicializar_base_de_datos
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -37,6 +38,7 @@ class MainWindow(QMainWindow):
         print(f"Sesión iniciada para el usuario con ID: {id_usuario}")  # Imprime el ID del usuario que ha iniciado sesión
 
 if __name__ == "__main__":
+    inicializar_base_de_datos()  # Crea las tablas si no existen
     app = QApplication(sys.argv)
     ventana_principal = MainWindow()
     ventana_principal.show()
