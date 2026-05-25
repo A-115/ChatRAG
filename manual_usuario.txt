@@ -6,32 +6,38 @@
  CONFIGURACION DEL ARCHIVO .env
 ======================================================================
 
-Este programa necesita conectarse a dos servicios externos:
-  1. Google Gemini (para generar respuestas)
-  2. Supabase (base de datos en la nube)
+Para que ChatRAG funcione, necesitas configurar un archivo ".env"
+en la carpeta del proyecto (donde está ChatRAG.exe en Windows, o
+donde ejecutaste setup.sh en Linux/macOS).
 
-Para ello, debes crear y configurar un archivo llamado ".env"
-en la misma carpeta donde se extrae la aplicación (ChatRAG.exe
-en Windows, o ChatRAG en Linux).
+OBLIGATORIO:
+  1. Google Gemini API Key (para que la IA genere respuestas)
+
+OPCIONAL (si no lo configuras, se usa SQLite local automáticamente):
+  2. Supabase (si quieres almacenar datos en la nube)
+  3. Gmail (si quieres verificación de email)
 
 Dentro de esa carpeta ya existe un archivo de ejemplo llamado
 ".env.example". Puedes renombrarlo a ".env" y luego editarlo
 con tus propios datos.
 
 ======================================================================
- PASO 1: CONSEGUIR LA API KEY DE GOOGLE GEMINI
+ PASO 1: CONSEGUIR LA API KEY DE GOOGLE GEMINI (OBLIGATORIO)
 ======================================================================
 
-1. Abre tu navegador y ve a: https://aistudio.google.com/app/apikey
+1. Abre tu navegador y ve a: https://ai.google.dev/
 2. Inicia sesión con tu cuenta de Google.
-3. Haz clic en "Create API Key" (Crear clave de API).
+3. Haz clic en "Get API Key" (Obtener clave de API).
 4. Copia la clave generada (comienza con "AIzaSy...").
 5. Pega esa clave en el archivo .env, en la línea:
       GEMINI_API_KEY=AIzaSy... (tu clave)
 
 ======================================================================
- PASO 2: CREAR UN PROYECTO EN SUPABASE (BASE DE DATOS)
+ PASO 2: (OPCIONAL) CREAR UN PROYECTO EN SUPABASE
 ======================================================================
+
+ SOLO necesario si quieres almacenar datos en la nube.
+   Si NO configuras Supabase, los datos se guardarán localmente en SQLite.
 
 1. Ve a https://supabase.com e inicia sesión (puedes usar GitHub).
 2. Haz clic en "New project" (Nuevo proyecto).
@@ -59,15 +65,24 @@ con tus propios datos.
 10. Pega cada valor en la línea correspondiente del archivo .env.
 
 ======================================================================
- PASO 3: COMPLETAR EL ARCHIVO .env
-======================================================================
-
-Abre el archivo .env con un editor de texto (Bloc de notas, por ejemplo)
-y rellena todas las líneas. Debe quedar parecido a esto:
-
+ MÍNIMO NECESARIO (obligatorio):
    GEMINI_API_KEY=AIzaSy...tu_clave_de_gemini
+
+OPCIONAL - Si NO completas esto, se usa SQLite local automáticamente:
    SUPABASE_HOST=db.xxxx.supabase.co
    SUPABASE_DB_PORT=5432
+   SUPABASE_DB_NAME=postgres
+   SUPABASE_DB_USER=postgres
+   SUPABASE_DB_PASSWORD=LaContraseñaQuePusiste
+
+OPCIONAL - Para verificación de email (si no lo completas, se imprime en consola):
+   EMAIL_USER=tu_email@gmail.com
+   EMAIL_PASSWORD=xxxx xxxx xxxx xxxx
+
+Abre el archivo .env con un editor de texto (Bloc de notas, por ejemplo)
+y rellena por lo menos:
+   - GEMINI_API_KEY (obligatorio)
+   - Opcionalmente: SUPABASE_* y EMAIL_*
    SUPABASE_DB_NAME=postgres
    SUPABASE_DB_USER=postgres
    SUPABASE_DB_PASSWORD=LaContraseñaQuePusiste
