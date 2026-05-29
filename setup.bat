@@ -53,7 +53,7 @@ echo ==========================================
 echo.
 echo  PRÓXIMOS PASOS - OBLIGATORIO:
 echo.
-echo 1. Obtén tu API key de Google Gemini (GRATIS):
+echo 1. Obtén tu API key de Google Gemini:
 echo    → Ve a: https://ai.google.dev/
 echo    → Haz clic en 'Get API Key'
 echo    → Copia tu API key
